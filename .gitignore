@@ -3,3 +3,4 @@ build/
 all/build/
 api/build/
 core/build/
+.idea/
