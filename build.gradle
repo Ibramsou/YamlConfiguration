@@ -1,0 +1,34 @@
+buildscript {
+    repositories {
+        gradlePluginPortal()
+
+        mavenCentral()
+        mavenLocal()
+
+    }
+    dependencies {
+        classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.1"
+    }
+
+}
+
+allprojects {
+    group = 'fr.bramsou.yaml-configuration'
+    version = '1.0'
+}
+
+subprojects { p ->
+    apply plugin: 'java'
+    apply plugin: 'com.github.johnrengelman.shadow'
+
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+
+    compileJava.options.encoding = 'UTF-8'
+
+    artifacts {
+        archives shadowJar
+    }
+}

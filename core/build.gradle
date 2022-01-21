@@ -1,0 +1,5 @@
+dependencies {
+    implementation project(':api')
+    compileOnly 'org.yaml:snakeyaml:1.29'
+    compileOnly 'commons-lang:commons-lang:2.6'
+}
