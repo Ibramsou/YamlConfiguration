@@ -10,18 +10,22 @@ buildscript {
         classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.1"
     }
 
+
 }
 
 allprojects {
-    group = 'fr.bramsou.yaml-configuration'
-    version = '1.0'
+    group = 'fr.bramsou.dynamic-yaml-configuration'
+    version = '1.0.1'
 }
 
 subprojects { p ->
     apply plugin: 'java'
+    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
     apply plugin: 'com.github.johnrengelman.shadow'
 
     repositories {
+
         mavenCentral()
         mavenLocal()
     }
@@ -30,5 +34,67 @@ subprojects { p ->
 
     artifacts {
         archives shadowJar
+    }
+
+    jar {
+        baseName = 'dynamic-yaml-configuration-' + p.name
+    }
+
+    shadowJar {
+        baseName = 'dynamic-yaml-configuration-' + p.name
+    }
+
+    java {
+        withJavadocJar()
+        withSourcesJar()
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId = 'io.github.ibramsou'
+                artifactId = 'dynamic-yaml-configuration-' + p.name
+                version = project.version
+                from components.java
+
+                pom {
+                    name = 'DynamicYamlConfiguration'
+                    description = 'Dynamic Yaml Configuration is an open-source Java Library used to create dynamic yaml configurations with Java annotations'
+                    url = 'https://github.com/Ibramsou/YamlConfiguration'
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'Bramsou'
+                            name = 'Ibrahim'
+                            email = 'braimsou@gmail.com'
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git:git:github.com/Ibramsou/YamlConfiguration.git'
+                        developerConnection = 'scm:git:ssh://github.com:Ibramsou/YamlConfiguration.git'
+                        url = 'https://github.com/Ibramsou/YamlConfiguration'
+                    }
+                }
+            }
+        }
+        repositories {
+            maven {
+                name = "OSSRH"
+                url "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2"
+                credentials {
+                    username sonatypeUsername
+                    password sonatypePassword
+                }
+            }
+        }
+    }
+
+    signing {
+        sign publishing.publications.mavenJava
     }
 }
