@@ -15,7 +15,7 @@ public abstract class ConfigurationList<V extends ConfigurationPart> extends Arr
      * Default section created while configuration is loading
      *
      * @param key the path of the configuration part
-     * @return
+     * @return the created configuration part
      */
     public abstract ConfigurationPart create(String key);
 

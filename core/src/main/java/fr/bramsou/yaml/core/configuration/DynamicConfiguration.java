@@ -3,6 +3,10 @@ package fr.bramsou.yaml.core.configuration;
 import fr.bramsou.yaml.api.configuration.ConfigurationException;
 import fr.bramsou.yaml.api.configuration.YamlSection;
 import fr.bramsou.yaml.api.configuration.dynamic.*;
+import fr.bramsou.yaml.api.configuration.dynamic.annotation.ConfigurationHeader;
+import fr.bramsou.yaml.api.configuration.dynamic.annotation.ConfigurationKeys;
+import fr.bramsou.yaml.api.configuration.dynamic.annotation.ConfigurationPath;
+import fr.bramsou.yaml.api.configuration.dynamic.annotation.ConfigurationReplacement;
 import fr.bramsou.yaml.api.util.Reflection;
 import fr.bramsou.yaml.core.configuration.comment.CommentNode;
 import fr.bramsou.yaml.core.configuration.comment.CommentTree;
@@ -11,6 +15,7 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
@@ -50,7 +55,7 @@ public class DynamicConfiguration extends Configuration {
     @Override
     public void load() {
         super.load();
-        this.loadFromInstance(null, this.instance, this);
+        this.loadFromInstance(null, this.instance, this, null);
     }
 
     @Override
@@ -94,7 +99,7 @@ public class DynamicConfiguration extends Configuration {
         } catch (IOException e) {
             throw new ConfigurationException("Cannot save configuration file (" + this.file.getPath() + ")", e);
         }
-        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(this.file), StandardCharsets.UTF_8)) {
+        try (OutputStreamWriter writer = new OutputStreamWriter(Files.newOutputStream(this.file.toPath()), StandardCharsets.UTF_8)) {
             writer.write(values.toString());
         } catch (IOException e) {
             throw new ConfigurationException("Cannot save configuration file (" + this.file.getPath() + ")", e);
@@ -102,11 +107,12 @@ public class DynamicConfiguration extends Configuration {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private void loadFromInstance(String parentPath, Object instance, YamlSection parent) {
+    private void loadFromInstance(String parentPath, Object instance, YamlSection parent, ConfigurationReplacement replacement) {
         for (Class<?> superClass : getSuperClasses(instance)) {
             for (Field field : superClass.getDeclaredFields()) {
                 ConfigurationPath annotatedPath = field.getAnnotation(ConfigurationPath.class);
                 ConfigurationKeys annotatedKeys = field.getAnnotation(ConfigurationKeys.class);
+                ConfigurationReplacement annotatedReplacement = field.getAnnotation(ConfigurationReplacement.class);
                 if (annotatedPath == null) continue;
                 Reflection.setAccessible(field);
                 String path = annotatedPath.value();
@@ -128,7 +134,7 @@ public class DynamicConfiguration extends Configuration {
                 if (fieldValue instanceof ConfigurationPart) {
                     YamlSection section = parent.getSection(path);
                     ConfigurationPart part = (ConfigurationPart) fieldValue;
-                    this.loadFromInstance(fullPath, part, section);
+                    this.loadFromInstance(fullPath, part, section, annotatedReplacement);
                     part.loaded();
                     continue;
                 } else if (fieldValue instanceof ConfigurationList) {
@@ -145,7 +151,7 @@ public class DynamicConfiguration extends Configuration {
                                 ConfigurationPart part = (ConfigurationPart) list.get(i);
                                 String keyName = defaultKeys[i];
                                 String keyPath = fullPath + "." + keyName;
-                                this.loadFromInstance(keyPath, part, keySection);
+                                this.loadFromInstance(keyPath, part, keySection, annotatedReplacement);
                                 part.setName(keyName);
                                 part.loaded();
                                 if (defaultComments != null) {
@@ -171,7 +177,7 @@ public class DynamicConfiguration extends Configuration {
                                 this.comments.put(keyPath, defaultComments);
                             }
                             ConfigurationPart part = list.create(key);
-                            this.loadFromInstance(keyPath, part, keySection);
+                            this.loadFromInstance(keyPath, part, keySection, annotatedReplacement);
                             part.setName(key);
                             part.loaded();
                             list.add(part);
@@ -181,23 +187,55 @@ public class DynamicConfiguration extends Configuration {
                 }
 
                 Object configValue = parent.get(path, fieldValue);
-                if (configValue instanceof String) {
-                    configValue = ((String) configValue).replaceAll("&", "§");
-                } else if (configValue instanceof List) {
-                    ParameterizedType genericType = (ParameterizedType) field.getGenericType();
-                    boolean isString = String.class.getName().equals(genericType.getActualTypeArguments()[0].getTypeName());
-                    if (isString) {
-                        List<String> currentList = (List<String>) configValue;
-                        List<String> coloredList = new ArrayList<>(currentList.size());
-                        for (String string : currentList) {
-                            coloredList.add(string.replaceAll("&", "§"));
+                if (configValue instanceof String || configValue instanceof List) {
+                    Map<String, String> replacementMap = new HashMap<>();
+                    if (annotatedReplacement != null) {
+                        this.fillReplacement(replacementMap, annotatedReplacement, field);
+                    }
+                    if (replacement != null) {
+                        this.fillReplacement(replacementMap, replacement, field);
+                    }
+                    if (!replacementMap.isEmpty()) {
+                        if (configValue instanceof String) {
+                            configValue = this.replaceMessage((String) configValue, replacementMap);
+                        } else {
+                            ParameterizedType genericType = (ParameterizedType) field.getGenericType();
+                            boolean isString = String.class.getName().equals(genericType.getActualTypeArguments()[0].getTypeName());
+                            if (isString) {
+                                List<String> currentList = (List<String>) configValue;
+                                List<String> coloredList = new ArrayList<>(currentList.size());
+                                for (String string : currentList) {
+                                    coloredList.add(this.replaceMessage(string, replacementMap));
+                                }
+                                configValue = coloredList;
+                            }
                         }
-                        configValue = coloredList;
                     }
                 }
                 Reflection.set(field, instance, configValue);
             }
         }
+    }
+
+    private void fillReplacement(Map<String, String> map, ConfigurationReplacement replacement, Field field) {
+        final String[] values = replacement.values();
+        final String[] replacements = replacement.replacements();
+        for (int i = 0; i < values.length; i++) {
+            try {
+                map.put(values[i], replacements[i]);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                throw new ConfigurationException("Unable to load configuration due to a wrong replacement annotation (field: " + field.getName() + ")", e);
+            }
+        }
+    }
+
+    private String replaceMessage(String input, Map<String, String> replacements) {
+        String output = input;
+        for (Map.Entry<String, String> entry : replacements.entrySet()) {
+            output = output.replaceAll(entry.getKey(), entry.getValue());
+        }
+
+        return output;
     }
 
     private List<Class<?>> getSuperClasses(Object instance) {
