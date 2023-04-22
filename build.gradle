@@ -9,20 +9,17 @@ buildscript {
     dependencies {
         classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.1"
     }
-
-
 }
 
 allprojects {
     group = 'fr.bramsou.dynamic-yaml-configuration'
-    version = '1.1.0'
+    version = '1.1.1'
 }
 
 subprojects { p ->
     apply plugin: 'java'
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
-    apply plugin: 'com.github.johnrengelman.shadow'
 
     repositories {
         mavenCentral()
@@ -31,15 +28,7 @@ subprojects { p ->
 
     compileJava.options.encoding = 'UTF-8'
 
-    artifacts {
-        archives shadowJar
-    }
-
     jar {
-        baseName = 'dynamic-yaml-configuration-' + p.name
-    }
-
-    shadowJar {
         baseName = 'dynamic-yaml-configuration-' + p.name
     }
 
