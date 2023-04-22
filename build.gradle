@@ -25,7 +25,6 @@ subprojects { p ->
     apply plugin: 'com.github.johnrengelman.shadow'
 
     repositories {
-
         mavenCentral()
         mavenLocal()
     }
@@ -42,6 +41,11 @@ subprojects { p ->
 
     shadowJar {
         baseName = 'dynamic-yaml-configuration-' + p.name
+    }
+
+    properties {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     java {

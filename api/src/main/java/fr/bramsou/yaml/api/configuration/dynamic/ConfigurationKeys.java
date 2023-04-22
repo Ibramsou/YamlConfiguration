@@ -9,7 +9,16 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface ConfigurationKeys {
 
+    /**
+     * Default comments defined above every configuration key
+     * @return an array of string
+     */
     String[] keyComments() default {};
 
+    /**
+     * Default keys in the configuration section
+     *
+     * @return an array of string
+     */
     String[] defaultKeys() default {};
 }
