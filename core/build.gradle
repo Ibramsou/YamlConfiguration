@@ -3,3 +3,9 @@ dependencies {
     compileOnly 'org.yaml:snakeyaml:1.29'
     compileOnly 'commons-lang:commons-lang:2.6'
 }
+
+shadowJar {
+    archiveBaseName.set('yaml-configuration-core')
+    archiveClassifier.set('')
+    archiveVersion.set(version)
+}

@@ -1,0 +1,5 @@
+shadowJar {
+    archiveBaseName.set('yaml-configuration-api')
+    archiveClassifier.set('')
+    archiveVersion.set(version)
+}
