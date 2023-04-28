@@ -55,7 +55,8 @@ public class MyDynamicConfiguration {
     public int exampleSize = 451;
 
     public MyDynamicConfiguration() {
-        final File configFile = new File("config.yml"); // file will be automatically created if not exists
+        final File configFile = new File("config.yml");
+        // file will be automatically created if not exists
         final YamlConfiguration configuration = YamlAPI.INSTANCE.getConfigurationManager()
                 .loadConfiguration(this, configFile, ConfigurationType.DYNAMIC);
         // You always need to load & save for dynamic config types
