@@ -10,8 +10,8 @@ import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Map;
 
 public abstract class Configuration extends ConfigurationSection implements YamlConfiguration {
@@ -43,7 +43,7 @@ public abstract class Configuration extends ConfigurationSection implements Yaml
     @Override
     @SuppressWarnings("unchecked")
     public void load() {
-        try (BufferedInputStream input = new BufferedInputStream(new FileInputStream(this.file))) {
+        try (BufferedInputStream input = new BufferedInputStream(Files.newInputStream(this.file.toPath()))) {
             Map<String, Object> map = this.yaml.load(input);
             if (map == null) return;
             for (Map.Entry<String, Object> entry : map.entrySet()) {

@@ -17,6 +17,7 @@ import java.lang.reflect.ParameterizedType;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.List;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -188,16 +189,25 @@ public class DynamicConfiguration extends Configuration {
 
                 Object configValue = parent.get(path, fieldValue);
                 if (configValue instanceof String || configValue instanceof List) {
-                    Map<String, String> replacementMap = new HashMap<>();
+                    final Map<String, String> replacementMap = new HashMap<>();
+                    boolean translateColorCodes = false;
+                    char colorCode = '&';
+                    char translateCode = '\u00A7';
                     if (annotatedReplacement != null) {
                         this.fillReplacement(replacementMap, annotatedReplacement, field);
+                        translateColorCodes = annotatedReplacement.translateColorCodes();
+                        colorCode = annotatedReplacement.colorCode();
+                        translateCode = annotatedReplacement.translateCode();
                     }
                     if (replacement != null) {
                         this.fillReplacement(replacementMap, replacement, field);
+                        translateColorCodes = replacement.translateColorCodes();
+                        colorCode = replacement.colorCode();
+                        translateCode = replacement.translateCode();
                     }
-                    if (!replacementMap.isEmpty()) {
+                    if (!replacementMap.isEmpty() || translateColorCodes) {
                         if (configValue instanceof String) {
-                            configValue = this.replaceMessage((String) configValue, replacementMap);
+                            configValue = this.replaceMessage((String) configValue, replacementMap, translateColorCodes, colorCode, translateCode);
                         } else {
                             ParameterizedType genericType = (ParameterizedType) field.getGenericType();
                             boolean isString = String.class.getName().equals(genericType.getActualTypeArguments()[0].getTypeName());
@@ -205,7 +215,7 @@ public class DynamicConfiguration extends Configuration {
                                 List<String> currentList = (List<String>) configValue;
                                 List<String> coloredList = new ArrayList<>(currentList.size());
                                 for (String string : currentList) {
-                                    coloredList.add(this.replaceMessage(string, replacementMap));
+                                    coloredList.add(this.replaceMessage(string, replacementMap, translateColorCodes, colorCode, translateCode));
                                 }
                                 configValue = coloredList;
                             }
@@ -229,10 +239,15 @@ public class DynamicConfiguration extends Configuration {
         }
     }
 
-    private String replaceMessage(String input, Map<String, String> replacements) {
+    private String replaceMessage(String input, Map<String, String> replacements, boolean translateColorCodes, char colorCode, char translateCode) {
         String output = input;
         for (Map.Entry<String, String> entry : replacements.entrySet()) {
             output = output.replaceAll(entry.getKey(), entry.getValue());
+
+        }
+
+        if (translateColorCodes) {
+            output = this.translateAlternateColorCodes(colorCode, translateCode, output);
         }
 
         return output;
@@ -249,4 +264,14 @@ public class DynamicConfiguration extends Configuration {
         return classes;
     }
 
+    private String translateAlternateColorCodes(char altColorChar, char translateCode, String textToTranslate) {
+        char[] b = textToTranslate.toCharArray();
+        for (int i = 0; i < b.length - 1; i++) {
+            if (b[i] == altColorChar && "0123456789AaBbCcDdEeFfKkLlMmNnOoRr".indexOf(b[i+1]) > -1) {
+                b[i] = translateCode;
+                b[i+1] = Character.toLowerCase(b[i+1]);
+            }
+        }
+        return new String(b);
+    }
 }

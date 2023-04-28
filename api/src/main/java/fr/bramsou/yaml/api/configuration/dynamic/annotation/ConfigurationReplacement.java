@@ -16,14 +16,31 @@ public @interface ConfigurationReplacement {
 
     /**
      * Define the values you need to replace
-     *
      * @return an array of string
      */
-    String[] values() default "&";
+    String[] values() default {};
 
     /**
      * Define the replacements, order must match with strings defined in ConfigurationReplacement#values()
      * @return an array of string
      */
-    String[] replacements() default "§";
+    String[] replacements() default {};
+
+    /**
+     * Enable automatic color code translation (useful for bukkit and bungee chat colors)
+     * @return true if translating color codes
+     */
+    boolean translateColorCodes() default true;
+
+    /**
+     * Color code char to translate
+     * @return the code to translate
+     */
+    char colorCode() default '&';
+
+    /**
+     * Define the translation code
+     * @return the translation code
+     */
+    char translateCode() default '\u00A7';
 }
