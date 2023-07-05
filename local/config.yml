@@ -1,0 +1,11 @@
+# Here is an example value :)
+example-value: Hi !
+example-size: 451
+replaced-value: '&cHi ! $$$'
+# Here is my sub config section ! :)
+sub-section:
+  enabled: true
+  players:
+  - Bramsou
+  - Ibrahim
+  message: '&aHi :)'

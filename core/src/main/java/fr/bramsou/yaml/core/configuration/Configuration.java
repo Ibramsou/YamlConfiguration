@@ -4,6 +4,7 @@ import fr.bramsou.yaml.api.configuration.ConfigurationException;
 import fr.bramsou.yaml.api.configuration.YamlConfiguration;
 import fr.bramsou.yaml.api.configuration.YamlSection;
 import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.representer.Representer;
@@ -21,15 +22,16 @@ public abstract class Configuration extends ConfigurationSection implements Yaml
 
     public Configuration(File file) {
         this.file = file;
-        Representer representer = new Representer() {{
-            this.representers.put(ConfigurationSection.class, data -> represent(((YamlSection) data).getEntries()));
-        }};
-        representer.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         DumperOptions options = new DumperOptions();
         options.setIndent(2);
         options.setAllowUnicode(true);
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-        this.yaml = new Yaml(new Constructor(), representer, options);
+        Representer representer = new Representer(options) {{
+            this.representers.put(ConfigurationSection.class, data -> represent(((YamlSection) data).getEntries()));
+        }};
+        representer.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+
+        this.yaml = new Yaml(new Constructor(new LoaderOptions()), representer, options);
         if (!this.file.exists()) {
             if (this.file.getParentFile() != null && !this.file.getParentFile().exists()) this.file.getParentFile().mkdirs();
             try {

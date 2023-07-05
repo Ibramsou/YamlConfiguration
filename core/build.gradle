@@ -1,5 +1,5 @@
 dependencies {
     implementation project(':api')
-    implementation 'org.yaml:snakeyaml:1.29'
+    implementation 'org.yaml:snakeyaml:2.0'
     implementation 'commons-lang:commons-lang:2.6'
 }
