@@ -1,4 +1,4 @@
-package fr.bramsou.yaml.core;
+package org.example;
 
 import fr.bramsou.yaml.api.YamlAPI;
 import fr.bramsou.yaml.api.configuration.ConfigurationType;
@@ -41,5 +41,10 @@ public class MyDynamicConfiguration {
         // You always need to load & save for dynamic config types
         configuration.load();
         configuration.save();
+    }
+
+    public static void main(String[] args) {
+        MyDynamicConfiguration configuration = new MyDynamicConfiguration();
+        System.out.println(configuration.exampleSize);
     }
 }
