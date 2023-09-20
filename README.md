@@ -25,8 +25,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'io.github.ibramsou:dynamic-yaml-configuration-api:1.3.0'
-    implementation 'io.github.ibramsou:dynamic-yaml-configuration-core:1.3.0'
+    implementation 'io.github.ibramsou:dynamic-yaml-configuration-api:1.3.1'
+    implementation 'io.github.ibramsou:dynamic-yaml-configuration-core:1.3.1'
 }
 ```
 ### Maven
